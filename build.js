@@ -22,8 +22,8 @@ const CLOUD_DRIVES = ['天翼云盘下载', '夸克网盘下载'];
 
 const THUMB_WIDTH = 320;
 const HERO_WIDTH = 1920;
-const HERO_MIN_PIXELS = 8_000_000;  // 8MP minimum for hero
-const HERO_MIN_WIDTH = 4000;        // or 4000px wide
+const HERO_MIN_PIXELS = 0;  // generate hero for all images
+const HERO_MIN_WIDTH = 0;
 
 // ============================================================
 // UTILITY FUNCTIONS
