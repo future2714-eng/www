@@ -1,0 +1,13 @@
+{
+  "name": "photo-gallery",
+  "version": "1.0.0",
+  "description": "University 4-year photo gallery",
+  "private": true,
+  "scripts": {
+    "add-photos": "node add-photos.js",
+    "build": "node build.js"
+  },
+  "dependencies": {
+    "sharp": "^0.33.5"
+  }
+}

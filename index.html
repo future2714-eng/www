@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>照片</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400&family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* === DESIGN TOKENS === */
+:root {
+  --bg: #0d0a08; --bg2: #1a1410;
+  --cream: #f5f0e8; --paper: #ede0c8;
+  --gold: #c9a96e; --gold2: #a08050;
+  --ink: #2c1810; --ink2: #4a3028;
+  --font-serif: 'Noto Serif SC', 'STSong', serif;
+  --font-display: 'Playfair Display', var(--font-serif);
+  --font-ui: 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background:
+    radial-gradient(ellipse 60% 45% at 25% 35%, rgba(44,24,16,0.4) 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 75% 25%, rgba(90,50,20,0.2) 0%, transparent 55%),
+    radial-gradient(ellipse 55% 50% at 50% 45%, rgba(44,24,16,0.3) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 35% at 60% 55%, rgba(30,15,8,0.5) 0%, transparent 50%),
+    radial-gradient(ellipse 45% 40% at 40% 60%, rgba(60,25,10,0.2) 0%, transparent 50%),
+    var(--bg);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, auto;
+  color: var(--cream);
+  font-family: var(--font-ui); -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  animation: flowBg 20s ease-in-out infinite;
+}
+@keyframes flowBg {
+  0%, 100% {
+    background-position: 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0% 0%;
+    background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+  }
+  25% {
+    background-position: 5% -3%, -3% 2%, 2% 5%, -2% -4%, 4% 1%;
+    background-size: 110% 105%, 105% 95%, 108% 102%, 95% 110%, 102% 108%;
+  }
+  50% {
+    background-position: -2% 4%, 3% -5%, -4% -2%, 5% 3%, -5% -3%;
+    background-size: 95% 110%, 110% 108%, 102% 95%, 108% 102%, 105% 110%;
+  }
+  75% {
+    background-position: 4% 2%, -5% -1%, 1% -3%, -3% 5%, 3% -2%;
+    background-size: 108% 98%, 98% 105%, 105% 108%, 102% 95%, 110% 105%;
+  }
+}
+/* Subtle grid texture layer */
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: 0.02;
+  background-image:
+    repeating-linear-gradient(0deg, transparent, transparent 60px, rgba(201,169,110,0.5) 60px, rgba(201,169,110,0.5) 61px),
+    repeating-linear-gradient(90deg, transparent, transparent 60px, rgba(201,169,110,0.5) 60px, rgba(201,169,110,0.5) 61px);
+}
+/* Film grain */
+body::after {
+  content: ''; position: fixed; inset: 0; z-index: 9999; pointer-events: none; opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* === LOADING === */
+#loading {
+  position: fixed; inset: 0; z-index: 10000; background: var(--bg);
+  display: flex; align-items: center; justify-content: center; flex-direction: column;
+  transition: opacity 0.8s, visibility 0.8s;
+}
+#loading.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+.ld-reel { width: 60px; height: 60px; border: 3px solid var(--gold2); border-radius: 50%; animation: spin 3s linear infinite; box-shadow: 0 0 25px rgba(201,169,110,0.15); }
+.ld-reel::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 14px; height: 14px; background: var(--bg); border: 2px solid var(--gold); border-radius: 50%; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.ld-text { margin-top: 18px; font-family: var(--font-display); font-size: 1.1rem; color: var(--gold); letter-spacing: 0.15em; }
+
+/* === DECORATIVE: Section Divider (film strip) === */
+.loc-divider {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 200px; margin: 20px auto 0;
+}
+.loc-divider::before, .loc-divider::after {
+  content: ''; flex: 1; height: 1px;
+  background: linear-gradient(to right, transparent, var(--gold2), transparent);
+}
+.loc-divider .reel-icon {
+  width: 12px; height: 12px; border: 2px solid var(--gold2); border-radius: 50%;
+  flex-shrink: 0; position: relative;
+  box-shadow: 0 0 8px rgba(201,169,110,0.2);
+}
+.loc-divider .reel-icon::after {
+  content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: 4px; height: 4px; background: var(--gold2); border-radius: 50%;
+}
+
+/* === DECORATIVE: Photo Corners on ticket cards === */
+.tc-photo::before {
+  content: '';
+  position: absolute; inset: 4px; z-index: 2; pointer-events: none;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 2px;
+}
+.tc-corner { position: absolute; width: 16px; height: 16px; z-index: 3; pointer-events: none; opacity: 0.5; }
+.tc-corner::before, .tc-corner::after { content: ''; position: absolute; background: rgba(255,255,255,0.4); }
+.tc-corner.tl { top: 8px; left: 8px; } .tc-corner.tr { top: 8px; right: 8px; }
+.tc-corner.bl { bottom: 8px; left: 8px; } .tc-corner.br { bottom: 8px; right: 8px; }
+.tc-corner::before { width: 100%; height: 1px; top: 0; left: 0; }
+.tc-corner::after { width: 1px; height: 100%; top: 0; left: 0; }
+
+/* === DECORATIVE: Date stamp overlay === */
+.tc-stamp {
+  position: absolute; top: 14px; right: 28px; z-index: 3; pointer-events: none;
+  font-family: var(--font-display); font-size: 0.5rem; letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.5); transform: rotate(8deg);
+  border: 1.5px solid rgba(255,255,255,0.3); border-radius: 50%;
+  padding: 6px 8px; text-align: center; line-height: 1.2;
+  width: 46px; height: 46px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+/* === DECORATIVE: Header ornament === */
+.loc-header .loc-ornament {
+  display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 10px;
+}
+.loc-header .loc-ornament::before, .loc-header .loc-ornament::after {
+  content: '◆'; font-size: 0.4rem; color: var(--gold2); opacity: 0.5;
+}
+.loc-header .loc-ornament span {
+  font-family: var(--font-display); font-size: 0.55rem; color: var(--gold2); letter-spacing: 0.25em;
+  opacity: 0.6;
+}
+
+/* === DECORATIVE: Floating film grain sparks === */
+#sparks {
+  position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden;
+}
+.spark {
+  position: absolute; width: 2px; height: 2px;
+  background: var(--gold); border-radius: 50%;
+  animation: sparkFloat 8s linear infinite;
+  opacity: 0;
+}
+@keyframes sparkFloat {
+  0% { opacity: 0; transform: translateY(100vh) scale(0); }
+  10% { opacity: 0.6; }
+  90% { opacity: 0; }
+  100% { transform: translateY(-10vh) scale(1); }
+}
+
+/* === SCROLL PROGRESS BAR (film strip) === */
+#progress-bar {
+  position: fixed; top: 0; left: 0; height: 2px; z-index: 200;
+  background: linear-gradient(to right, var(--gold2), var(--gold), var(--dark-red));
+  transition: width 0.15s linear;
+  box-shadow: 0 0 8px rgba(201,169,110,0.5);
+}
+/* Sprocket dots along progress */
+#progress-dots {
+  position: fixed; top: 2px; left: 0; right: 0; height: 4px; z-index: 199; pointer-events: none;
+  background: repeating-linear-gradient(90deg, transparent 0px, transparent 28px, rgba(201,169,110,0.12) 28px, rgba(201,169,110,0.12) 30px);
+}
+
+/* === NAV (auto-hide, reveal on top hover) === */
+#nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 12px 32px;
+  display: flex; align-items: center; justify-content: space-between;
+  background: linear-gradient(to bottom, rgba(13,10,8,0.95) 0%, rgba(13,10,8,0.6) 80%, transparent 100%);
+  transform: translateY(-100%); transition: transform 0.35s;
+}
+#nav.visible { transform: translateY(0); }
+/* Invisible hover zone at top to trigger nav */
+#nav-hover-zone {
+  position: fixed; top: 0; left: 0; right: 0; height: 40px; z-index: 99;
+}
+#nav .brand { font-family: var(--font-display); font-size: 1rem; color: var(--gold); letter-spacing: 0.1em; }
+#nav .links { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+#nav .links a { font-size: 0.7rem; color: rgba(245,240,232,0.5); text-decoration: none; letter-spacing: 0.08em; cursor: pointer; padding: 4px 8px; border-radius: 2px; transition: all 0.3s; white-space: nowrap; }
+#nav .links a:hover, #nav .links a.on { color: var(--gold); background: rgba(201,169,110,0.08); }
+
+/* === HERO === */
+#hero {
+  height: 100vh; display: flex; align-items: flex-end; justify-content: center; position: relative; overflow: hidden;
+}
+#hero-bg {
+  position: absolute; inset: -20px; background-size: cover; background-position: center;
+  transition: background-image 1s var(--ease-out);
+}
+#hero-bg::after { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at center, transparent 35%, rgba(13,10,8,0.65) 85%, rgba(13,10,8,0.9) 100%); }
+.hero-inner { position: relative; z-index: 5; text-align: center; padding-bottom: 50px; }
+.hero-inner h1 { font-family: var(--font-display); font-size: clamp(2.2rem, 5vw, 4.5rem); font-weight: 900; color: var(--cream); letter-spacing: 0.04em; text-shadow: 0 4px 40px rgba(0,0,0,0.6); }
+.hero-inner .sub { font-size: 0.9rem; color: var(--gold2); letter-spacing: 0.2em; margin-top: 6px; opacity: 0; transition: opacity 1s; }
+.hero-inner .sub.show { opacity: 1; }
+.cursor-blink { font-weight: 300; color: var(--gold); animation: blink 0.8s step-end infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+
+/* Share button on ticket cards */
+.tc-share-btn {
+  position: absolute; bottom: 40px; right: 8px; z-index: 5;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0.6); font-size: 0.65rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.3s; opacity: 0;
+}
+.ticket-card:hover .tc-share-btn { opacity: 1; }
+.tc-share-btn:hover { background: rgba(0,0,0,0.75); border-color: var(--gold); color: var(--gold); }
+.scroll-hint { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 5; text-align: center; animation: bounce 2s infinite; }
+.scroll-hint span { font-size: 0.55rem; letter-spacing: 0.2em; color: rgba(245,240,232,0.35); display: block; }
+.scroll-hint .arr { display: block; width: 16px; height: 16px; border-right: 1.5px solid rgba(245,240,232,0.25); border-bottom: 1.5px solid rgba(245,240,232,0.25); transform: rotate(45deg); margin: 4px auto 0; }
+@keyframes bounce { 0%,100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(8px); } }
+
+/* === FILM LEADER BANNER === */
+#film-leader {
+  padding: 50px 32px 40px; text-align: center; position: relative;
+  background: linear-gradient(to bottom, rgba(13,10,8,0.95), var(--bg2) 40%, var(--bg2) 60%, rgba(13,10,8,0.95));
+}
+#film-leader::before, #film-leader::after {
+  content: ''; display: block; margin: 0 auto;
+  height: 14px; background: var(--bg-deep);
+  background-image: repeating-linear-gradient(90deg, transparent 0px, transparent 24px, rgba(201,169,110,0.15) 24px, rgba(201,169,110,0.15) 28px);
+}
+#film-leader::before { margin-bottom: 28px; }
+#film-leader::after { margin-top: 28px; }
+
+.leader-reel {
+  display: inline-flex; align-items: center; gap: 16px;
+  font-family: var(--font-display); font-size: 0.65rem;
+  color: var(--gold2); letter-spacing: 0.18em;
+  border: 1px solid rgba(201,169,110,0.2); padding: 8px 20px;
+  margin-bottom: 18px;
+}
+.leader-reel .dot { width: 5px; height: 5px; background: var(--gold); border-radius: 50%; }
+.leader-reel .diamond { font-size: 0.5rem; color: var(--gold); }
+
+.leader-stats {
+  display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; margin-bottom: 22px;
+}
+.leader-stat { text-align: center; }
+.leader-stat .num {
+  font-family: var(--font-display); font-size: 2.4rem; font-weight: 900;
+  color: var(--cream); line-height: 1.1;
+}
+.leader-stat .lbl { font-size: 0.6rem; color: var(--gold2); letter-spacing: 0.15em; margin-top: 2px; }
+
+.leader-cities {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 900px; margin: 0 auto;
+}
+.leader-city {
+  font-family: var(--font-serif); font-size: 0.72rem; color: rgba(245,240,232,0.45);
+  cursor: pointer; padding: 5px 12px; border: 1px solid rgba(201,169,110,0.12);
+  border-radius: 2px; transition: all 0.35s; letter-spacing: 0.06em;
+}
+.leader-city:hover { color: var(--gold); border-color: var(--gold); background: rgba(201,169,110,0.06); }
+.leader-city .count { font-size: 0.55rem; color: var(--gold2); margin-left: 4px; opacity: 0.7; }
+
+/* Travel route map */
+.route-map-wrap {
+  max-width: 900px; margin: 32px auto 0; position: relative;
+}
+.route-map-wrap svg { width: 100%; height: auto; display: block; }
+.route-map-wrap .map-dot { cursor: pointer; transition: all 0.3s; }
+.route-map-wrap .map-dot:hover circle { fill: var(--gold); r: 7; }
+.route-map-wrap .map-dot:hover text { fill: var(--cream); font-weight: 700; }
+.route-map-wrap .map-dot text { font-family: var(--font-serif); font-size: 11px; }
+.route-map-wrap .map-count { font-family: var(--font-ui); font-size: 9px; fill: var(--gold2); opacity: 0.7; }
+
+/* === LOCATION SECTION === */
+.loc-section { padding: 80px 32px 60px; max-width: 1400px; margin: 0 auto; }
+.loc-header { text-align: center; margin-bottom: 48px; }
+.loc-header .loc-label { font-family: var(--font-display); font-size: 2rem; font-weight: 900; color: var(--cream); letter-spacing: 0.05em; }
+.loc-header .loc-sub { font-size: 0.8rem; color: var(--gold2); letter-spacing: 0.12em; margin-top: 4px; }
+.loc-divider { width: 60px; height: 2px; background: linear-gradient(to right, transparent, var(--gold2), transparent); margin: 20px auto 0; }
+
+/* === TICKET CARD GRID === */
+.ticket-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 28px 20px; }
+@media (max-width: 640px) { .ticket-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px 14px; } }
+
+/* Each image = a ticket stub */
+.ticket-card {
+  opacity: 0; transform: translateY(50px) scale(0.92);
+  transition: opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  cursor: pointer;
+  perspective: 600px;
+}
+.ticket-card.show { opacity: 1; transform: translateY(0) scale(1); }
+
+.ticket-card-inner {
+  background: linear-gradient(180deg, #f7f2e8 0%, #efe4d0 100%);
+  box-shadow: 0 2px 0 rgba(0,0,0,0.06), 0 6px 16px rgba(0,0,0,0.2), 0 16px 40px rgba(0,0,0,0.4);
+  position: relative; border-radius: 1px;
+  transition: transform 0.4s var(--ease-spring), box-shadow 0.4s;
+  will-change: transform;
+}
+.ticket-card:hover .ticket-card-inner {
+  transform: translateY(-8px) rotateX(2deg);
+  box-shadow: 0 6px 0 rgba(0,0,0,0.1), 0 14px 32px rgba(0,0,0,0.35), 0 28px 64px rgba(0,0,0,0.55);
+}
+
+/* Perforation */
+.ticket-card-inner::before {
+  content: ''; position: absolute; top: -7px; left: 10px; right: 10px; height: 7px; z-index: 2;
+  background: radial-gradient(circle at 4px 3.5px, var(--bg) 3.5px, transparent 4px);
+  background-size: 13px 7px;
+}
+.ticket-card-inner::after {
+  content: ''; position: absolute; bottom: -7px; left: 10px; right: 10px; height: 7px; z-index: 2;
+  background: radial-gradient(circle at 4px 3.5px, var(--bg) 3.5px, transparent 4px);
+  background-size: 13px 7px;
+}
+
+/* Photo area */
+.tc-photo {
+  width: 100%; aspect-ratio: 4/3; overflow: hidden; position: relative;
+}
+.tc-photo img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s var(--ease-out); }
+.ticket-card:hover .tc-photo img { transform: scale(1.04); }
+.tc-photo::after { content: ''; position: absolute; inset: 0; border: 2px solid rgba(255,255,255,0.15); pointer-events: none; }
+
+/* Info strip below photo */
+.tc-info {
+  padding: 10px 14px 12px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-top: 1px dashed rgba(160,128,96,0.3);
+  font-family: var(--font-serif); color: var(--ink);
+}
+.tc-info .tc-date { font-size: 0.7rem; letter-spacing: 0.06em; color: var(--ink2); }
+.tc-info .tc-no { font-family: monospace; font-size: 0.5rem; color: var(--gold2); letter-spacing: 0.08em; }
+
+/* Stub strip on right */
+.tc-stub {
+  position: absolute; right: -8px; top: 14px; bottom: 14px; width: 16px;
+  writing-mode: vertical-rl; text-orientation: mixed;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+  font-family: var(--font-display); font-size: 0.65rem; font-weight: 700;
+  letter-spacing: 0.12em;
+  padding: 6px 0; z-index: 3;
+}
+.tc-stub::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 1px;
+  background: repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px);
+}
+
+/* === LIGHTBOX === */
+#lb {
+  position: fixed; inset: 0; z-index: 9000; background: rgba(0,0,0,0.93);
+  display: flex; align-items: center; justify-content: center; flex-direction: column;
+  opacity: 0; visibility: hidden; transition: opacity 0.4s; cursor: zoom-out;
+}
+#lb.open { opacity: 1; visibility: visible; }
+#lb-wrap { padding: 10px; background: linear-gradient(180deg, #f7f2e8 0%, #efe4d0 100%); box-shadow: 0 0 0 1px rgba(201,169,110,0.3), 0 20px 60px rgba(0,0,0,0.7); max-width: 90vw; max-height: 80vh; position: relative; }
+#lb-wrap::before, #lb-wrap::after { content: ''; position: absolute; left: 10px; right: 10px; height: 6px; background: radial-gradient(circle at 3.5px 3px, rgba(0,0,0,0.93) 3px, transparent 3.5px); background-size: 12px 6px; }
+#lb-wrap::before { top: -6px; } #lb-wrap::after { bottom: -6px; }
+#lb-img { display: block; max-width: 85vw; max-height: 70vh; object-fit: contain; cursor: default; }
+#lb-info { margin-top: 6px; font-family: var(--font-serif); font-size: 0.7rem; color: var(--ink); letter-spacing: 0.06em; text-align: center; }
+#lb-close { position: absolute; top: 16px; right: 24px; z-index: 10; width: 36px; height: 36px; border-radius: 50%; background: rgba(13,10,8,0.6); border: 1px solid rgba(201,169,110,0.25); color: var(--cream); font-size: 1.2rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+#lb-close:hover { background: rgba(139,26,26,0.5); }
+.lb-arr { position: absolute; top: 50%; transform: translateY(-50%); z-index: 10; width: 40px; height: 60px; background: rgba(13,10,8,0.4); border: 1px solid rgba(201,169,110,0.2); color: var(--gold2); font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.lb-arr:hover { color: var(--gold); } .lb-arr.l { left: 12px; } .lb-arr.r { right: 12px; }
+
+/* === BACK TO TOP === */
+#btt {
+  position: fixed; bottom: 28px; right: 28px; z-index: 90; width: 38px; height: 38px; border-radius: 50%;
+  background: rgba(13,10,8,0.7); border: 1px solid rgba(201,169,110,0.2); color: var(--gold2);
+  font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  opacity: 0; transform: translateY(16px); transition: all 0.4s; pointer-events: none;
+}
+#btt.on { opacity: 1; transform: translateY(0); pointer-events: auto; }
+#btt:hover { border-color: var(--gold); color: var(--gold); }
+
+/* Mobile */
+@media (max-width: 640px) {
+  .loc-section { padding: 50px 16px 40px; }
+  .loc-header .loc-label { font-size: 1.4rem; }
+  #nav { padding: 10px 14px; } #nav .links { gap: 2px; } #nav .links a { font-size: 0.6rem; padding: 3px 5px; }
+}
+
+/* === ADMIN PANEL (only when served via HTTP) === */
+#admin-panel {
+  display: none; position: relative; z-index: 80;
+  background: linear-gradient(to bottom, var(--bg2), rgba(13,10,8,0.98));
+  border-bottom: 1px solid rgba(201,169,110,0.15);
+  padding: 20px 32px 24px; max-height: 80vh; overflow-y: auto;
+}
+#admin-panel.open { display: block; }
+#admin-panel .ap-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px; padding-bottom: 10px;
+  border-bottom: 1px solid rgba(201,169,110,0.1);
+}
+#admin-panel .ap-header h2 {
+  font-family: var(--font-display); font-size: 1rem; color: var(--gold); letter-spacing: 0.08em;
+}
+#admin-panel .ap-close {
+  width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+  background: transparent; border: 1px solid rgba(201,169,110,0.2); color: var(--gold2);
+  font-size: 0.9rem; display: flex; align-items: center; justify-content: center;
+  transition: all 0.3s;
+}
+#admin-panel .ap-close:hover { border-color: var(--gold); color: var(--gold); }
+
+/* Drop zone (admin) */
+.ap-drop-zone {
+  border: 2px dashed rgba(201,169,110,0.25); border-radius: 2px;
+  padding: 32px 20px; text-align: center; cursor: pointer; position: relative;
+  transition: all 0.35s; background: rgba(255,255,255,0.01);
+}
+.ap-drop-zone:hover,.ap-drop-zone.drag-over { border-color: var(--gold); background: rgba(201,169,110,0.04); }
+.ap-drop-zone.drag-over { box-shadow: 0 0 30px rgba(201,169,110,0.1); }
+.ap-drop-zone .dz-icon { font-size: 2rem; margin-bottom: 8px; display: block; }
+.ap-drop-zone .dz-title { font-family: var(--font-display); font-size: 0.9rem; color: var(--gold); letter-spacing: 0.06em; }
+.ap-drop-zone .dz-hint { font-size: 0.65rem; color: var(--gold2); letter-spacing: 0.04em; }
+.ap-drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+/* Admin photo grid */
+.ap-photo-list { margin-top: 20px; display: none; }
+.ap-photo-list.active { display: block; }
+.ap-list-header {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(201,169,110,0.1);
+}
+.ap-list-header h3 { font-size: 0.8rem; color: var(--cream); letter-spacing: 0.04em; }
+.ap-count { font-size: 0.6rem; color: var(--gold2); }
+.ap-batch { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.ap-batch select,.ap-batch input,.ap-batch button {
+  padding: 4px 10px; font-size: 0.65rem; font-family: var(--font-ui);
+  background: rgba(0,0,0,0.3); border: 1px solid rgba(201,169,110,0.2);
+  color: var(--cream); border-radius: 2px; letter-spacing: 0.03em;
+}
+.ap-batch select:focus,.ap-batch input:focus { outline: none; border-color: var(--gold); }
+.ap-batch .btn { cursor: pointer; font-weight: 600; transition: all 0.3s; }
+.ap-batch .btn-apply { color: var(--gold2); }
+.ap-batch .btn-apply:hover { border-color: var(--gold); color: var(--gold); }
+.ap-batch .btn-import { background: #5a8a6a; color: #fff; border-color: #5a8a6a; }
+.ap-batch .btn-import:hover { background: #6aaa7a; }
+.ap-batch .btn-clear { background: transparent; color: #8b3a3a; border-color: rgba(139,58,58,0.3); }
+.ap-batch .btn-clear:hover { background: rgba(139,58,58,0.1); border-color: #8b3a3a; }
+
+.ap-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.ap-card {
+  background: linear-gradient(180deg, #f7f2e8 0%, #efe4d0 100%);
+  color: var(--ink); position: relative; border-radius: 1px;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.2);
+}
+.ap-card .ap-img { width: 100%; aspect-ratio: 4/3; overflow: hidden; background: #1a1410; }
+.ap-card .ap-img img { width: 100%; height: 100%; object-fit: cover; }
+.ap-card .ap-body { padding: 8px 10px 10px; }
+.ap-card .ap-fn { font-size: 0.6rem; font-weight: 600; margin-bottom: 4px; word-break: break-all; }
+.ap-card .ap-row { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; font-size: 0.58rem; }
+.ap-card .ap-row label { width: 28px; flex-shrink: 0; color: var(--ink2); font-size: 0.55rem; }
+.ap-card .ap-row input,.ap-card .ap-row select {
+  flex: 1; padding: 2px 4px; font-size: 0.58rem; font-family: var(--font-ui);
+  border: 1px solid rgba(160,128,80,0.3); border-radius: 1px;
+  background: rgba(255,255,255,0.5); color: var(--ink);
+}
+.ap-card .ap-row input:focus,.ap-card .ap-row select:focus { outline: none; border-color: var(--gold); }
+.ap-card .ap-exif { font-size: 0.52rem; color: var(--gold2); margin-top: 2px; }
+.ap-card .ap-check { position: absolute; top: 6px; left: 6px; z-index: 5; accent-color: #5a8a6a; width: 14px; height: 14px; }
+
+/* Admin progress */
+.ap-progress { display: none; margin-top: 16px; }
+.ap-progress.active { display: block; }
+.ap-prog-bar { height: 3px; background: rgba(201,169,110,0.1); border-radius: 2px; overflow: hidden; margin-bottom: 6px; }
+.ap-prog-fill { height: 100%; background: linear-gradient(to right, var(--gold2), var(--gold), #5a8a6a); width: 0%; transition: width 0.3s; border-radius: 2px; }
+.ap-prog-text { font-size: 0.65rem; color: var(--gold2); letter-spacing: 0.04em; }
+.ap-log { display: none; margin-top: 10px; max-height: 150px; overflow-y: auto; }
+.ap-log.active { display: block; }
+.ap-log pre { font-family: 'Consolas', monospace; font-size: 0.55rem; color: rgba(245,240,232,0.4); line-height: 1.7; white-space: pre-wrap; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 2px; border: 1px solid rgba(201,169,110,0.06); }
+
+/* Toast */
+#ap-toast {
+  position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 10001;
+  padding: 10px 24px; border-radius: 2px; font-size: 0.75rem; letter-spacing: 0.06em;
+  opacity: 0; transition: opacity 0.4s; pointer-events: none;
+}
+#ap-toast.show { opacity: 1; }
+#ap-toast.ok { background: #2a4a2a; color: #8cc88c; border: 1px solid rgba(100,200,100,0.3); }
+#ap-toast.err { background: #4a2a2a; color: #c88c8c; border: 1px solid rgba(200,100,100,0.3); }
+</style>
+</head>
+<body>
+
+<div id="loading"><div class="ld-reel"></div><div class="ld-text">冲洗胶片中…</div></div>
+
+<div id="nav-hover-zone"></div>
+<nav id="nav">
+  <div class="brand">照片</div>
+  <div class="links" id="nav-links"></div>
+</nav>
+
+<!-- ADMIN: Photo Import Panel -->
+<div id="admin-panel">
+  <div class="ap-header">
+    <h2>📷 添加照片</h2>
+    <button class="ap-close" id="ap-close" title="关闭">✕</button>
+  </div>
+  <div class="ap-drop-zone" id="ap-drop-zone">
+    <span class="dz-icon">🎞️</span>
+    <div class="dz-title">拖放照片到此处</div>
+    <div class="dz-hint">或点击选择文件 · JPG/PNG/WebP · 可批量</div>
+    <input type="file" id="ap-file-input" multiple accept="image/jpeg,image/png,image/webp">
+  </div>
+  <div class="ap-photo-list" id="ap-photo-list">
+    <div class="ap-list-header">
+      <h3>待导入 <span class="ap-count" id="ap-count"></span></h3>
+      <div class="ap-batch">
+        <label style="font-size:0.6rem;color:var(--gold2)">统一位置：</label>
+        <select id="ap-batch-loc"><option value="">— 城市 —</option></select>
+        <input type="text" id="ap-batch-sub" placeholder="子位置" style="width:80px">
+        <button class="btn btn-apply" id="ap-btn-apply">应用</button>
+        <button class="btn btn-import" id="ap-btn-import">导入图库</button>
+        <button class="btn btn-clear" id="ap-btn-clear">清空</button>
+      </div>
+    </div>
+    <div class="ap-grid" id="ap-grid"></div>
+  </div>
+  <div class="ap-progress" id="ap-progress">
+    <div class="ap-prog-bar"><div class="ap-prog-fill" id="ap-prog-fill"></div></div>
+    <div class="ap-prog-text" id="ap-prog-text">准备中…</div>
+  </div>
+  <div class="ap-log" id="ap-log-wrap"><pre id="ap-log"></pre></div>
+</div>
+<div id="ap-toast"></div>
+
+<section id="hero">
+  <div id="hero-bg"></div>
+  <div class="hero-inner">
+    <h1><span id="hero-typewriter"></span><span class="cursor-blink">|</span></h1>
+    <div class="sub" id="hero-sub-fade">2023–2026</div>
+  </div>
+  <div class="scroll-hint"><span>向下滚动</span><div class="arr"></div></div>
+</section>
+
+<div id="progress-bar"></div><div id="progress-dots"></div>
+
+<div id="film-leader">
+  <div class="leader-reel"><span class="diamond">◆</span> FILM LEADER <span class="dot"></span> REEL NO.001 <span class="diamond">◆</span></div>
+  <div class="leader-stats" id="leader-stats"></div>
+  <div class="leader-cities" id="leader-cities"></div>
+  <div class="route-map-wrap" id="route-map-wrap"></div>
+</div>
+
+<div id="sparks"></div>
+<div id="sections"></div>
+
+<div id="btt">↑</div>
+
+<div id="lb">
+  <button id="lb-close">✕</button>
+  <div id="lb-wrap"><img id="lb-img" src="" alt="" /></div>
+  <div id="lb-info"></div>
+  <button class="lb-arr l" id="lb-prev">◂</button>
+  <button class="lb-arr r" id="lb-next">▸</button>
+</div>
+
+<script src="photos.js?v=20260704"></script>
+<script>
+const $=s=>document.querySelector(s),$$=s=>document.querySelectorAll(s);
+let manifest,allImages=[],lbImgs=[],lbI=0;
+
+// ---- Palette → CSS accent color ----
+function paletteToAccent(p) {
+  if (!p) return {accent:'#8b1a1a',accent2:'#c9a96e'};
+  const {r,g,b}=p.dominant;
+  const hue=(()=>{let R=r/255,G=g/255,B=b/255;const M=Math.max(R,G,B),m=Math.min(R,G,B),d=M-m;if(d===0)return 0;let h;if(M===R)h=((G-B)/d)%6;else if(M===G)h=(B-R)/d+2;else h=(R-G)/d+4;return Math.round(h*60);})();
+  if(hue<25||hue>340) return {accent:'#b54a2a',accent2:'#d4a050'};
+  if(hue<55) return {accent:'#9a7030',accent2:'#c9b860'};
+  if(hue<170) return {accent:'#3a6070',accent2:'#80b0b8'};
+  if(hue<270) return {accent:'#5a5080',accent2:'#9088b8'};
+  if(hue<340) return {accent:'#8b3a50',accent2:'#c08090'};
+  return {accent:'#8b1a1a',accent2:'#c9a96e'};
+}
+
+function adjustForBrightness(accent, p) {
+  if (!p) return accent;
+  const {r,g,b}=p.dominant; const br=(r+g+b)/3;
+  return br>170?accent.replace(/^#/,''):accent.replace(/^#/,'');
+}
+
+// ---- Build ticket card HTML ----
+function buildTicketCard(img, idx) {
+  const {accent,accent2}=paletteToAccent(img.palette);
+  const card=document.createElement('div');
+  card.className='ticket-card'; card.dataset.idx=idx;
+  const v = (manifest.generated||'').replace(/[^0-9]/g,'').slice(0,8); // cache-bust version
+  card.innerHTML=`
+    <div class="ticket-card-inner">
+      <div class="tc-photo">
+        <img src="${img.thumb}?v=${v}" data-src="${img.thumb}" data-hi="${img.heroFile||img.thumb}" alt="${img.filename}" loading="lazy" decoding="async" onerror="window._imgRetry&&window._imgRetry(this)" onload="window._imgLoaded&&window._imgLoaded(this)">
+        <div class="tc-corner tl"></div><div class="tc-corner tr"></div>
+        <div class="tc-corner bl"></div><div class="tc-corner br"></div>
+        <div class="tc-stamp">DEV<br>${String(img.month).padStart(2,'0')}.${String(img.year).slice(2)}</div>
+        <button class="tc-share-btn" data-filename="${img.filename}" title="分享票根">📥</button>
+      </div>
+      <div class="tc-info">
+        <span class="tc-date">${img.date} · ${img.location||''}</span>
+        <span class="tc-no">No.${String(idx+1).padStart(6,'0')}</span>
+      </div>
+      <div class="tc-stub" style="color:${accent}">ADMIT ONE</div>
+    </div>`;
+  const imgEl=card.querySelector('img');
+  const heroUrl=imgEl.dataset.hi;
+  // 预加载高清图，避免 hover 时才下载导致动画卡顿
+  if(heroUrl&&heroUrl!==img.thumb){
+    const preloader=new Image();
+    preloader.onload=()=>{imgEl.dataset.hiReady='1';};
+    // Don't overwrite data-hi on error — keep the hero path so hover can retry
+    preloader.onerror=()=>{ /* hero preload failed; hover will retry */ };
+    preloader.src=heroUrl+'?v='+v;
+  }
+  card.addEventListener('mouseenter',()=>{
+    if(imgEl.dataset.hiReady==='1'){
+      imgEl.src=heroUrl+'?v='+v;
+    } else if(heroUrl&&heroUrl!==img.thumb&&!imgEl.dataset.hiRetrying){
+      // Preload failed earlier — give hero a second chance on first hover
+      imgEl.dataset.hiRetrying='1';
+      const p=new Image();
+      p.onload=()=>{imgEl.dataset.hiReady='1';imgEl.src=heroUrl+'?v='+v;};
+      p.onerror=()=>{imgEl.dataset.hi=img.thumb;}; // permanently fall back to thumb
+      p.src=heroUrl+'?v='+v;
+    }
+  });
+  card.addEventListener('mouseleave',()=>{
+    imgEl.src=img.thumb+'?v='+v;
+  });
+  card.addEventListener('click',()=>openLB(img));
+  return card;
+}
+
+// ---- Build all sections ----
+function buildSections() {
+  const container=$('#sections'); container.innerHTML='';
+  const navLinks=$('#nav-links'); navLinks.innerHTML='';
+
+  for (const loc of manifest.locations) {
+    // Section
+    const sec=document.createElement('section'); sec.className='loc-section'; sec.id='loc-'+loc.label.replace(/[^\w]/g,'');
+    sec.innerHTML=`
+      <div class="loc-header">
+        <div class="loc-ornament"><span>MEMORY No.${String(loc.month).padStart(2,'0')}${String(loc.year).slice(2)}</span></div>
+        <div class="loc-label">${loc.label}</div>
+        <div class="loc-sub">${loc.images.length} 张照片</div>
+        <div class="loc-divider"><div class="reel-icon"></div></div>
+      </div>
+      <div class="ticket-grid"></div>`;
+    const grid=sec.querySelector('.ticket-grid');
+    loc.images.forEach((img,i)=>{
+      const idx=allImages.findIndex(x=>x.filename===img.filename);
+      grid.appendChild(buildTicketCard(img,idx));
+    });
+    container.appendChild(sec);
+
+    // Nav link
+    const a=document.createElement('a'); a.textContent=loc.label.split('·')[1]?.trim()||loc.label;
+    a.href='#loc-'+loc.label.replace(/[^\w]/g,''); navLinks.appendChild(a);
+  }
+  // Admin button (only on HTTP)
+  if (window.location.protocol === 'http:') {
+    const admA=document.createElement('a'); admA.textContent='➕ 添加照片'; admA.id='ap-nav-btn';
+    admA.style.cssText='color:var(--gold)!important;border-color:rgba(201,169,110,0.35)';
+    admA.addEventListener('click',e=>{e.preventDefault();toggleAdmin();});
+    navLinks.appendChild(admA);
+  }
+}
+
+// ---- Hero cycle ----
+function heroCycle() {
+  const list=manifest.allHeroes; if(!list.length) return;
+  const v = (manifest.generated||'').replace(/[^0-9]/g,'').slice(0,8);
+  let i=Math.floor(Math.random()*list.length);
+  const bg=$('#hero-bg');
+  const set=()=>{bg.style.backgroundImage=`url(${list[i].heroFile||list[i].thumb}?v=${v})`;i=(i+1)%list.length;};
+  set(); setInterval(set,7000);
+}
+
+// ---- Scroll reveal + hero preload ----
+function setupReveal() {
+  const v = (manifest.generated||'').replace(/[^0-9]/g,'').slice(0,8);
+  const obs=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{if(e.isIntersecting){
+      const cards=e.target.querySelectorAll('.ticket-card:not(.show)');
+      cards.forEach((c,j)=>{setTimeout(()=>c.classList.add('show'),j*50);});
+      // 预加载可见 section 内所有卡片的 hero 图
+      e.target.querySelectorAll('.ticket-card img[data-hi]').forEach(img=>{
+        const hi=img.dataset.hi;
+        if(hi&&hi!==img.dataset.src&&img.dataset.hiReady!=='1'){
+          const p=new Image(); p.onload=()=>{img.dataset.hiReady='1';};
+          p.onerror=()=>{img.dataset.hiFailed='1';}; // don't overwrite data-hi; hover will retry
+          p.src=hi+'?v='+v;
+        }
+      });
+    }});
+  },{threshold:0.08});
+  setTimeout(()=>$$('.loc-section').forEach(s=>obs.observe(s)),400);
+}
+
+// ---- Image load error retry ----
+// Per-URL retry counter (closure Map) — 2 retries per unique URL, then
+// fall back to data-src (thumb). Resets when the image loads successfully.
+;(function(){
+  const _rc = new Map(); // urlBase → retryCount
+  const MAX = 2;
+
+  window._imgRetry = function(imgEl) {
+    const cur = imgEl.src.replace(/\?.*$/, '');
+    const count = _rc.get(cur) || 0;
+
+    if (count >= MAX) {
+      // Exhausted retries for this URL → fall back to thumb
+      const fb = imgEl.dataset.src;
+      if (fb) {
+        const fbBase = fb.replace(/\?.*$/, '');
+        if (cur !== fbBase) {
+          imgEl.src = fb + '?fb=' + Date.now();
+          _rc.delete(cur); // reset hero retry count so next hover retries fresh
+        }
+      }
+      return;
+    }
+
+    _rc.set(cur, count + 1);
+    imgEl.src = cur + '?retry=' + Date.now();
+  };
+
+  // Clear retry state when ANY image loads successfully
+  window._imgLoaded = function(imgEl) {
+    const cur = imgEl.src.replace(/\?.*$/, '');
+    _rc.delete(cur);
+  };
+})();
+
+// ---- Lightbox ----
+function openLB(img) {
+  lbImgs=manifest.allHeroes; lbI=lbImgs.findIndex(h=>h.filename===img.filename);
+  if(lbI<0){lbImgs=[img];lbI=0;}
+  updateLB();$('#lb').classList.add('open');
+}
+function navLB(d){if(!lbImgs.length)return;lbI=((lbI+d)%lbImgs.length+lbImgs.length)%lbImgs.length;updateLB();}
+function updateLB(){
+  const img=lbImgs[lbI];if(!img)return;
+  const v = (manifest.generated||'').replace(/[^0-9]/g,'').slice(0,8);
+  const url = (img.heroFile||img.thumb) + '?v=' + v;
+  $('#lb-img').style.transform='scale(0.95)';
+  // Set fallback src so _imgRetry can switch to thumb if hero fails
+  $('#lb-img').dataset.src = img.thumb;
+  $('#lb-img').src = url;
+  $('#lb-info').textContent=`${img.date} · ${img.location||'校园'} · ${img.width}×${img.height}`;
+  setTimeout(()=>{$('#lb-img').style.transform='scale(1)';},50);
+}
+$('#lb-close').addEventListener('click',()=>$('#lb').classList.remove('open'));
+$('#lb').addEventListener('click',e=>{if(e.target===$('#lb'))$('#lb').classList.remove('open');});
+$('#lb-prev').addEventListener('click',e=>{e.stopPropagation();navLB(-1);});
+$('#lb-next').addEventListener('click',e=>{e.stopPropagation();navLB(1);});
+document.addEventListener('keydown',e=>{
+  if(!$('#lb').classList.contains('open'))return;
+  if(e.key==='Escape')$('#lb').classList.remove('open');
+  if(e.key==='ArrowLeft')navLB(-1);if(e.key==='ArrowRight')navLB(1);
+});
+
+// ---- Nav & Back-to-top ----
+function setupNav() {
+  const nav=$('#nav'); const zone=$('#nav-hover-zone'); let hideTimer;
+  function showNav(){nav.classList.add('visible');clearTimeout(hideTimer);}
+  function hideNavDelayed(){hideTimer=setTimeout(()=>nav.classList.remove('visible'),800);}
+  zone.addEventListener('mouseenter',showNav);
+  nav.addEventListener('mouseenter',showNav);
+  nav.addEventListener('mouseleave',hideNavDelayed);
+  // Show nav briefly on page load
+  nav.classList.add('visible');hideNavDelayed();
+
+  window.addEventListener('scroll',()=>{
+    const s=window.scrollY;
+    $('#btt').classList.toggle('on',s>600);
+    const docH=document.documentElement.scrollHeight-window.innerHeight;
+    $('#progress-bar').style.width=docH>0?Math.round(s/docH*100)+'%':'0%';
+    $$('#nav-links a').forEach(a=>{const sec=$(a.getAttribute('href'));if(sec){const r=sec.getBoundingClientRect();a.classList.toggle('on',r.top<=80&&r.bottom>80);}});
+  },{passive:true});
+  $('#btt').addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+}
+
+// ---- Parallax ----
+window.addEventListener('scroll',()=>{
+  const s=window.scrollY; if(s<window.innerHeight) $('#hero-bg').style.transform=`translateY(${s*0.35}px)`;
+},{passive:true});
+
+// ---- Card tilt on hover (RAF throttled for performance) ----
+function setupCardTilt() {
+  let ticking=false, lastEvent=null;
+  document.addEventListener('mousemove', e => {
+    lastEvent=e;
+    if(!ticking){
+      requestAnimationFrame(()=>{
+        if(!lastEvent)return;
+        $$('.ticket-card:hover .ticket-card-inner').forEach(card => {
+          const rect=card.parentElement.getBoundingClientRect();
+          const x=(lastEvent.clientX-rect.left)/rect.width-0.5;
+          const y=(lastEvent.clientY-rect.top)/rect.height-0.5;
+          card.style.transform=`translateY(-8px) rotateX(${-y*6}deg) rotateY(${x*8}deg)`;
+        });
+        ticking=false; lastEvent=null;
+      });
+      ticking=true;
+    }
+  });
+}
+
+// ---- Typing animation ----
+function typeWriter(el, text, speed, callback) {
+  let i = 0; el.textContent = '';
+  function type() {
+    if (i < text.length) { el.textContent += text[i]; i++; setTimeout(type, speed); }
+    else { document.querySelector('.cursor-blink').style.display='none'; if(callback)callback(); }
+  }
+  type();
+}
+
+// ---- Share card generator (Canvas) ----
+function generateShareCard(imgData) {
+  const canvas = document.createElement('canvas');
+  const W = 800, H = 600; canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  // Paper background
+  ctx.fillStyle = '#f5f0e8'; ctx.fillRect(0, 0, W, H);
+  // Subtle texture
+  ctx.fillStyle = 'rgba(200,180,150,0.06)';
+  for (let i = 0; i < 2000; i++) { ctx.fillRect(Math.random()*W, Math.random()*H, 1, 1); }
+
+  // Photo area
+  const photoH = 380, photoY = 50;
+  ctx.fillStyle = '#1a1410'; ctx.fillRect(30, photoY, W-60, photoH);
+  // Draw photo
+  const img = new Image(); img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    const scale = Math.min((W-60)/img.width, photoH/img.height);
+    const w = img.width * scale, h = img.height * scale;
+    const x = 30 + (W-60-w)/2, py = photoY + (photoH-h)/2;
+    ctx.drawImage(img, x, py, w, h);
+
+    // Photo corners
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1;
+    [[x-2,py-2],[x+w-14,py-2],[x-2,py+h-14],[x+w-14,py+h-14]].forEach(([cx,cy]) => {
+      ctx.beginPath(); ctx.moveTo(cx+14,cy); ctx.lineTo(cx,cy); ctx.lineTo(cx,cy+14); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx+14,cy+14); ctx.lineTo(cx+10,cy+14); ctx.moveTo(cx+14,cy+14); ctx.lineTo(cx+14,cy+10); ctx.stroke();
+    });
+
+    // Info area
+    const infoY = photoY + photoH + 20;
+    ctx.fillStyle = '#2c1810'; ctx.font = 'bold 36px "Playfair Display", "Noto Serif SC", serif';
+    ctx.fillText(imgData.yearLabel || '', 40, infoY + 35);
+    ctx.font = '18px "Noto Serif SC", serif'; ctx.fillStyle = '#4a3028';
+    ctx.fillText(imgData.date + ' · ' + (imgData.location || '校园'), 40, infoY + 60);
+
+    // ADMIT ONE stub on right
+    ctx.fillStyle = '#8b1a1a'; ctx.font = 'bold 28px "Playfair Display", serif';
+    ctx.save(); ctx.translate(W-40, photoY+photoH/2); ctx.rotate(-Math.PI/2);
+    ctx.fillText('ADMIT ONE', 0, 0); ctx.restore();
+
+    // Ticket number
+    ctx.font = '12px monospace'; ctx.fillStyle = '#c9a96e';
+    ctx.fillText('No.' + String(imgData.idx+1).padStart(6,'0'), W-120, infoY+60);
+
+    // Perforation lines
+    ctx.strokeStyle = 'rgba(160,128,96,0.4)'; ctx.setLineDash([4, 6]);
+    ctx.beginPath(); ctx.moveTo(40, photoY-4); ctx.lineTo(W-40, photoY-4); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(40, photoY+photoH+4); ctx.lineTo(W-40, photoY+photoH+4); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Download
+    const link = document.createElement('a');
+    link.download = `ticket_${imgData.filename.replace(/\.[^.]+$/,'')}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  };
+  img.src = imgData.heroFile || imgData.thumb;
+}
+
+// ---- Floating sparks ----
+function spawnSparks() {
+  const container=$('#sparks'); if(!container)return;
+  for(let i=0;i<20;i++){
+    const s=document.createElement('div');s.className='spark';
+    s.style.left=Math.random()*100+'%';
+    s.style.animationDelay=Math.random()*8+'s';
+    s.style.animationDuration=(6+Math.random()*8)+'s';
+    s.style.width=s.style.height=(1+Math.random()*2)+'px';
+    container.appendChild(s);
+  }
+}
+
+// ---- Boot ----
+async function init(){
+  try{manifest=window.PHOTO_MANIFEST;if(!manifest)throw new Error();}catch(e){$('#loading').innerHTML='<div style="text-align:center;color:var(--gold)"><h1>⚠️</h1><p>请先运行 build.js</p></div>';return;}
+  allImages=manifest.locations.flatMap(l=>l.images);
+  buildSections(); heroCycle(); setupNav(); setupReveal(); spawnSparks(); setupCardTilt();
+  // Film leader
+  const cities=[...new Set(manifest.locations.map(l=>l.location))];
+  $('#leader-stats').innerHTML=`
+    <div class="leader-stat"><div class="num">${manifest.totalImages}</div><div class="lbl">FRAMES</div></div>
+    <div class="leader-stat"><div class="num">${manifest.locations.length}</div><div class="lbl">DESTINATIONS</div></div>
+    <div class="leader-stat"><div class="num">${cities.length}</div><div class="lbl">CITIES</div></div>
+    <div class="leader-stat"><div class="num">4</div><div class="lbl">YEARS</div></div>`;
+  const citiesHTML=manifest.locations.map(l=>{
+    const c=l.location; const count=l.images.length;
+    return `<span class="leader-city" data-target="loc-${l.label.replace(/[^\w]/g,'')}">${c}<span class="count">${count}</span></span>`;
+  }).join('');
+  $('#leader-cities').innerHTML=citiesHTML;
+  $('#leader-cities').addEventListener('click',e=>{
+    const tag=e.target.closest('.leader-city'); if(!tag)return;
+    const id='loc-'+tag.dataset.target;
+    const sec=document.getElementById(id); if(sec)sec.scrollIntoView({behavior:'smooth'});
+  });
+  // Constellation star map
+  const cityCoords={
+    '天津':[580,95],'唐山':[660,70],'秦皇岛':[760,55],
+    '北京':[510,80],'石家庄':[470,200],'太原':[300,210],
+    '洛阳':[370,350],'苏州':[660,410],'济南':[600,280],'青岛':[780,300]
+  };
+  const routeOrder=manifest.locations.map(l=>l.location);
+  const uniqueRoute=[]; routeOrder.forEach(c=>{if(!uniqueRoute.includes(c))uniqueRoute.push(c);});
+  const pts=uniqueRoute.map(c=>cityCoords[c]||null).filter(Boolean);
+  // All connections as bezier curves for constellation feel
+  const lines=[]; for(let i=0;i<pts.length-1;i++){
+    const x1=pts[i][0],y1=pts[i][1],x2=pts[i+1][0],y2=pts[i+1][1];
+    const mx=(x1+x2)/2,my=(y1+y2)/2-15;
+    lines.push(`<path d="M${x1} ${y1} Q${mx} ${my} ${x2} ${y2}" fill="none" stroke="var(--gold)" stroke-width="1.2" opacity="0.6"/>`);
+  }
+  // Background stars (random scatter)
+  const bgStars=[]; for(let i=0;i<50;i++){
+    const sx=250+Math.random()*580,sy=30+Math.random()*400,sr=0.3+Math.random()*1.2;
+    bgStars.push(`<circle cx="${sx}" cy="${sy}" r="${sr}" fill="var(--gold)" opacity="${0.1+Math.random()*0.3}"><animate attributeName="opacity" values="${0.1+Math.random()*0.2};${0.2+Math.random()*0.4};${0.1+Math.random()*0.2}" dur="${2+Math.random()*4}s" repeatCount="indefinite"/></circle>`);
+  }
+  // City stars (larger, glowing)
+  const dotsHTML=uniqueRoute.map((c,i)=>{
+    const p=cityCoords[c]; if(!p)return'';
+    const loc=manifest.locations.find(l=>l.location===c);
+    const count=loc?loc.images.length:'';
+    const r=3+count/12; // size proportional to photo count
+    return `<g class="map-dot" data-target="loc-${(loc?.label||'').replace(/[^\w]/g,'')}" cursor="pointer">
+      <circle cx="${p[0]}" cy="${p[1]}" r="${r+8}" fill="var(--gold)" opacity="0.08"><animate attributeName="r" values="${r+6};${r+12};${r+6}" dur="3s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.05;0.12;0.05" dur="3s" repeatCount="indefinite"/></circle>
+      <circle cx="${p[0]}" cy="${p[1]}" r="${r+2}" fill="none" stroke="var(--gold)" stroke-width="1" opacity="0.5"><animate attributeName="r" values="${r+1};${r+5};${r+1}" dur="2.5s" repeatCount="indefinite"/></circle>
+      <circle cx="${p[0]}" cy="${p[1]}" r="${r}" fill="var(--gold)" filter="url(#starGlow)"/>
+      <circle cx="${p[0]}" cy="${p[1]}" r="1.5" fill="#fff" opacity="0.8"/>
+      <!-- Cross sparkle -->
+      <line x1="${p[0]-r-6}" y1="${p[1]}" x2="${p[0]+r+6}" y2="${p[1]}" stroke="var(--gold)" stroke-width="0.4" opacity="0.3"/>
+      <line x1="${p[0]}" y1="${p[1]-r-6}" x2="${p[0]}" y2="${p[1]+r+6}" stroke="var(--gold)" stroke-width="0.4" opacity="0.3"/>
+      <text x="${p[0]}" y="${p[1]-r-16}" text-anchor="middle" fill="var(--gold)" font-family="var(--font-serif)" font-size="13" font-weight="600" letter-spacing="0.08em">${c}</text>
+      <text x="${p[0]}" y="${p[1]+r+18}" text-anchor="middle" fill="var(--gold2)" font-family="var(--font-ui)" font-size="9" opacity="0.7">${count}张</text>
+    </g>`;
+  }).join('');
+
+  $('#route-map-wrap').innerHTML=`<svg viewBox="230 30 580 420" style="width:100%;max-width:900px;height:auto;">
+    <defs><filter id="starGlow"><feGaussianBlur stdDeviation="2.5"/></filter></defs>
+    <rect x="230" y="30" width="580" height="420" fill="transparent"/>
+    ${bgStars.join('')}
+    ${lines.join('')}
+    ${dotsHTML}
+  </svg>`;
+  // Click handler
+  $('#route-map-wrap').addEventListener('click',e=>{
+    const dot=e.target.closest('.map-dot'); if(!dot)return;
+    const id=dot.dataset.target;const sec=document.getElementById(id);
+    if(sec)sec.scrollIntoView({behavior:'smooth'});
+  });
+  // Typing animation
+  typeWriter($('#hero-typewriter'), '照片', 120, () => {
+    setTimeout(() => $('#hero-sub-fade').classList.add('show'), 400);
+  });
+  // Share button delegation
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('.tc-share-btn');
+    if (!btn) return;
+    e.stopPropagation(); e.preventDefault();
+    const fn = btn.dataset.filename;
+    const imgData = allImages.find(i => i.filename === fn);
+    if (imgData) {
+      imgData.idx = allImages.indexOf(imgData);
+      imgData.yearLabel = manifest.locations.find(l => l.images.some(i => i.filename === fn))?.label || '';
+      generateShareCard(imgData);
+    }
+  });
+  // One-time lightbox error handler — delegates to shared _imgRetry
+  const lbImg = $('#lb-img');
+  if (lbImg) lbImg.addEventListener('error', function() { window._imgRetry(this); });
+  setTimeout(()=>$('#loading').classList.add('hidden'),500);
+}
+
+// ============================================================
+// ADMIN: Photo Import (only active when served via HTTP)
+// ============================================================
+let apStaged=[], apLocations=[], apOpen=false;
+const isAdmin=window.location.protocol==='http:';
+
+function $ap(s){return document.querySelector(s);}
+function toggleAdmin(){
+  apOpen=!apOpen;
+  const panel=$ap('#admin-panel');
+  if(apOpen){ panel.classList.add('open'); loadApLocations(); }
+  else panel.classList.remove('open');
+}
+
+function apToast(msg,type){
+  const t=$ap('#ap-toast'); t.textContent=msg; t.className=type==='err'?'err show':'ok show';
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+async function loadApLocations(){
+  if(apLocations.length)return;
+  try{
+    const res=await fetch('/api/locations');
+    apLocations=await res.json();
+    [document.getElementById('ap-batch-loc')].forEach(sel=>{
+      sel.innerHTML='<option value="">— 城市 —</option>';
+      apLocations.forEach(l=>{const o=document.createElement('option');o.value=l;o.textContent=l;sel.appendChild(o);});
+    });
+  }catch(e){}
+}
+
+// Drop zone
+function setupApDropZone(){
+  const dz=$ap('#ap-drop-zone'); const input=$ap('#ap-file-input');
+  input.addEventListener('change',()=>apHandleFiles(input.files));
+  dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag-over');});
+  dz.addEventListener('dragleave',()=>dz.classList.remove('drag-over'));
+  dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag-over');apHandleFiles(e.dataTransfer.files);});
+}
+
+async function apHandleFiles(fileList){
+  const valid=[...fileList].filter(f=>/\.(jpg|jpeg|png|webp)$/i.test(f.name));
+  if(!valid.length){apToast('请选择 JPG/PNG/WebP 格式','err');return;}
+  $ap('#ap-photo-list').classList.add('active');
+  for(const file of valid){
+    if(apStaged.find(p=>p.filename===file.name))continue;
+    const photo={id:Date.now()+Math.random(),file,filename:file.name,dateTaken:'',make:'',model:'',location:'',subLocation:''};
+    apStaged.push(photo); apRenderCard(photo);
+  }
+  apUpdateCount();
+  // Send for EXIF scan
+  const fd=new FormData(); valid.forEach(f=>fd.append('files',f));
+  try{
+    const res=await fetch('/api/scan',{method:'POST',body:fd});
+    const results=await res.json();
+    for(const r of results){
+      const photo=apStaged.find(p=>p.filename===r.filename);
+      if(photo){photo.dateTaken=r.dateTaken||'';photo.make=r.make||'';photo.model=r.model||'';apUpdateCard(photo);}
+    }
+  }catch(e){console.error('EXIF scan failed:',e);}
+}
+
+function apRenderCard(photo){
+  const grid=$ap('#ap-grid');
+  const card=document.createElement('div'); card.className='ap-card'; card.dataset.pid=photo.id;
+  card.innerHTML=`
+    <input type="checkbox" class="ap-check" checked>
+    <div class="ap-img">${photo.file?`<img src="${URL.createObjectURL(photo.file)}" alt="${photo.filename}">`:'<div style="color:var(--gold2);display:flex;align-items:center;justify-content:center;height:100%;font-size:0.6rem">📷</div>'}</div>
+    <div class="ap-body">
+      <div class="ap-fn" title="${photo.filename}">${photo.filename}</div>
+      <div class="ap-row"><label>日期</label><input type="text" class="fld-date" value="${photo.dateTaken}" placeholder="YYYY-MM-DD"></div>
+      <div class="ap-row"><label>位置</label><select class="fld-loc"><option value="">— 选择 —</option>${apLocations.map(l=>`<option value="${l}">${l}</option>`).join('')}<option value="__other__">其他…</option></select></div>
+      <div class="ap-row"><label>子位</label><input type="text" class="fld-sub" value="${photo.subLocation}" placeholder="可选"></div>
+      <div class="ap-exif" data-pid="${photo.id}">${photo.make?photo.make+' '+photo.model:'读取 EXIF 中…'}</div>
+    </div>`;
+  grid.appendChild(card);
+}
+
+function apUpdateCard(photo){
+  const card=document.querySelector(`[data-pid="${photo.id}"]`); if(!card)return;
+  const df=card.querySelector('.fld-date'); if(df&&photo.dateTaken&&!df.value)df.value=photo.dateTaken;
+  const ex=card.querySelector(`.ap-exif[data-pid="${photo.id}"]`);
+  if(ex&&photo.make)ex.textContent=[photo.make,photo.model].filter(Boolean).join(' ')+(photo.dateTaken?' · '+photo.dateTaken:'');
+}
+
+function apUpdateCount(){$ap('#ap-count').textContent=`(${apStaged.length} 张)`;}
+
+// Buttons
+function setupApButtons(){
+  $ap('#ap-close').addEventListener('click',toggleAdmin);
+  $ap('#ap-btn-apply').addEventListener('click',()=>{
+    const loc=document.getElementById('ap-batch-loc').value;
+    const sub=document.getElementById('ap-batch-sub').value.trim();
+    if(!loc){apToast('请先选择位置','err');return;}
+    document.querySelectorAll('.ap-card').forEach(c=>{c.querySelector('.fld-loc').value=loc;if(sub)c.querySelector('.fld-sub').value=sub;});
+    apToast('已应用: '+loc+(sub?' · '+sub:''),'ok');
+  });
+  $ap('#ap-btn-clear').addEventListener('click',()=>{
+    apStaged=[];$ap('#ap-grid').innerHTML='';$ap('#ap-photo-list').classList.remove('active');apUpdateCount();
+  });
+  $ap('#ap-btn-import').addEventListener('click',apDoImport);
+  // "其他" location handling
+  $ap('#ap-grid').addEventListener('change',e=>{
+    if(e.target.classList.contains('fld-loc')&&e.target.value==='__other__'){
+      const custom=prompt('输入城市名称：');
+      if(custom&&custom.trim()){
+        const opt=document.createElement('option');opt.value=custom.trim();opt.textContent=custom.trim();opt.selected=true;
+        e.target.insertBefore(opt,e.target.lastChild);
+        if(!apLocations.includes(custom.trim())){apLocations.push(custom.trim());loadApLocations();}
+      }else{e.target.value='';}
+    }
+  });
+}
+
+async function apDoImport(){
+  const items=[];
+  document.querySelectorAll('.ap-card').forEach(card=>{
+    const pid=card.dataset.pid; const photo=apStaged.find(p=>p.id==pid); if(!photo)return;
+    if(!card.querySelector('.ap-check').checked)return;
+    const dateVal=card.querySelector('.fld-date').value.trim();
+    const locVal=card.querySelector('.fld-loc').value;
+    const subVal=card.querySelector('.fld-sub').value.trim();
+    items.push({filename:photo.filename,dateTaken:dateVal,location:locVal,subLocation:subVal});
+  });
+  if(!items.length){apToast('没有选中任何照片','err');return;}
+  const missingDate=items.filter(i=>!i.dateTaken), missingLoc=items.filter(i=>!i.location);
+  if(missingDate.length||missingLoc.length){apToast('请补全: '+(missingDate.length?'日期':'')+(missingDate.length&&missingLoc.length?' + ':'')+(missingLoc.length?'位置':''),'err');return;}
+
+  $ap('#ap-btn-import').disabled=true;
+  const progEl=$ap('#ap-progress'), logEl=$ap('#ap-log-wrap'), logPre=$ap('#ap-log');
+  progEl.classList.add('active');logEl.classList.add('active');logPre.textContent='';
+
+  const fd=new FormData();
+  for(const item of items){
+    const photo=apStaged.find(p=>p.filename===item.filename);
+    if(photo&&photo.file){fd.append('files',photo.file);fd.append('meta_'+photo.filename,JSON.stringify(item));}
+  }
+
+  apLog('⏳ 正在导入…');
+  try{
+    const res=await fetch('/api/import',{method:'POST',body:fd});
+    const result=await res.json();
+    if(result.error){apToast(result.error,'err');apLog('❌ '+result.error);$ap('#ap-btn-import').disabled=false;return;}
+    apLog(result.log||''); apSetProgress(0.5,'导入完成，构建中…');
+
+    const pollId=setInterval(async()=>{
+      try{
+        const sr=await fetch('/api/build-status'); const status=await sr.json();
+        if(status.log)apLog(status.log);
+        if(status.progress!==undefined)apSetProgress(0.5+status.progress*0.5,status.phase||'构建中…');
+        if(status.done){clearInterval(pollId);apSetProgress(1,'✅ 完成!');apToast(`成功导入 ${result.imported||items.length} 张照片`,'ok');apLog('✅ 完成 — 刷新页面即可查看');$ap('#ap-btn-import').disabled=false;}
+      }catch(e){}
+    },800);
+  }catch(e){apToast('导入失败: '+e.message,'err');apLog('❌ '+e.message);$ap('#ap-btn-import').disabled=false;}
+}
+
+function apSetProgress(pct,text){$ap('#ap-prog-fill').style.width=Math.round(pct*100)+'%';$ap('#ap-prog-text').textContent=text;}
+function apLog(msg){const el=$ap('#ap-log');if(el)el.textContent+=msg+'\n';}
+
+// Init admin
+if(isAdmin){
+  setupApDropZone();
+  setupApButtons();
+  // Keyboard shortcut: Ctrl+Shift+A to toggle
+  document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.shiftKey&&e.key==='A'){e.preventDefault();toggleAdmin();}});
+}
+
+document.addEventListener('DOMContentLoaded',init);
+</script>
+</body>
+</html>
