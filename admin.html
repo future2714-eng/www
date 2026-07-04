@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>图库管理 · 添加照片</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400&family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d0a08; --bg2: #1a1410;
+  --cream: #f5f0e8; --paper: #ede0c8;
+  --gold: #c9a96e; --gold2: #a08050;
+  --ink: #2c1810; --ink2: #4a3028;
+  --green: #5a8a6a; --red: #8b3a3a;
+  --font-serif: 'Noto Serif SC', 'STSong', serif;
+  --font-display: 'Playfair Display', var(--font-serif);
+  --font-ui: 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background: radial-gradient(ellipse 50% 40% at 50% 30%, rgba(90,50,20,0.15) 0%, transparent 55%), var(--bg);
+  color:var(--cream); font-family:var(--font-ui);
+  -webkit-font-smoothing:antialiased; min-height:100vh;
+}
+body::after{
+  content:'';position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:0.04;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ============================================================
+   LOGIN OVERLAY
+   ============================================================ */
+#login-overlay {
+  position: fixed; inset: 0; z-index: 10000;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+}
+#login-overlay.hidden { display: none; }
+.login-box {
+  text-align: center;
+  padding: 48px 40px;
+  border: 1px solid rgba(201,169,110,0.15);
+  background: linear-gradient(180deg, rgba(26,20,16,0.8), rgba(13,10,8,0.95));
+  max-width: 380px;
+  width: 90%;
+}
+.login-box .login-icon { font-size: 2.5rem; margin-bottom: 16px; display: block; }
+.login-box h2 {
+  font-family: var(--font-display); font-size: 1.3rem;
+  color: var(--gold); letter-spacing: 0.1em; margin-bottom: 8px;
+}
+.login-box p { font-size: 0.7rem; color: var(--gold2); letter-spacing: 0.06em; margin-bottom: 24px; }
+.login-box input[type=password] {
+  width: 100%; padding: 10px 14px; font-size: 0.9rem; font-family: var(--font-ui);
+  background: rgba(0,0,0,0.4); border: 1px solid rgba(201,169,110,0.3);
+  color: var(--cream); border-radius: 2px; text-align: center;
+  letter-spacing: 0.15em; transition: border-color 0.3s;
+}
+.login-box input[type=password]:focus { outline: none; border-color: var(--gold); }
+.login-box .login-err {
+  font-size: 0.65rem; color: var(--red); margin-top: 10px; min-height: 18px;
+  letter-spacing: 0.06em;
+}
+.login-box button {
+  margin-top: 14px; padding: 8px 32px; font-size: 0.75rem; font-family: var(--font-ui);
+  background: var(--gold2); color: var(--bg); border: none; border-radius: 2px;
+  cursor: pointer; font-weight: 600; letter-spacing: 0.1em; transition: all 0.3s;
+}
+.login-box button:hover { background: var(--gold); }
+
+/* Server status banner */
+#server-banner {
+  display: none;
+  padding: 12px 32px; text-align: center;
+  background: linear-gradient(to right, rgba(139,58,58,0.15), transparent, rgba(139,58,58,0.15));
+  border-bottom: 1px solid rgba(139,58,58,0.2);
+}
+#server-banner.show { display: block; }
+#server-banner .banner-icon { font-size: 1.2rem; vertical-align: middle; margin-right: 6px; }
+#server-banner span {
+  font-size: 0.7rem; color: var(--gold2); letter-spacing: 0.06em;
+}
+#server-banner code {
+  background: rgba(0,0,0,0.4); padding: 2px 8px; border: 1px solid rgba(201,169,110,0.2);
+  border-radius: 2px; font-family: 'Consolas', monospace; font-size: 0.7rem;
+  color: var(--gold); letter-spacing: 0.03em;
+}
+
+/* Header */
+header{
+  padding:24px 32px;border-bottom:1px solid rgba(201,169,110,0.12);
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+}
+header h1{font-family:var(--font-display);font-size:1.6rem;color:var(--gold);letter-spacing:0.08em;font-weight:900}
+header .sub{font-size:0.65rem;color:var(--gold2);letter-spacing:0.12em}
+.nav-links{display:flex;gap:12px}
+.nav-links a{
+  font-size:0.7rem;color:rgba(245,240,232,0.5);text-decoration:none;
+  padding:6px 14px;border:1px solid rgba(201,169,110,0.15);border-radius:2px;
+  transition:all 0.3s;letter-spacing:0.06em;
+}
+.nav-links a:hover{color:var(--gold);border-color:var(--gold)}
+
+/* Main container */
+main{max-width:1200px;margin:0 auto;padding:32px 24px}
+
+/* === UPLOAD ZONE === */
+#drop-zone{
+  border:2px dashed rgba(201,169,110,0.25);
+  border-radius:2px;padding:48px 24px;text-align:center;
+  transition:all 0.35s;cursor:pointer;position:relative;
+  background:rgba(255,255,255,0.015);
+}
+#drop-zone:hover,#drop-zone.drag-over{
+  border-color:var(--gold);
+  background:rgba(201,169,110,0.04);
+}
+#drop-zone.drag-over{box-shadow:0 0 40px rgba(201,169,110,0.1)}
+#drop-zone .dz-icon{font-size:2.5rem;margin-bottom:12px;display:block}
+#drop-zone .dz-title{font-family:var(--font-display);font-size:1rem;color:var(--gold);letter-spacing:0.08em;margin-bottom:6px}
+#drop-zone .dz-hint{font-size:0.7rem;color:var(--gold2);letter-spacing:0.06em}
+#drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+
+/* Server-disabled state */
+#drop-zone.disabled { opacity: 0.4; pointer-events: none; }
+#drop-zone.disabled .dz-title { color: var(--gold2); }
+
+/* === PHOTO LIST === */
+#photo-list{margin-top:32px}
+.photo-list-header{
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+  margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid rgba(201,169,110,0.15);
+}
+.photo-list-header h2{font-family:var(--font-display);font-size:1rem;color:var(--cream);letter-spacing:0.06em}
+.photo-list-header .count{font-size:0.65rem;color:var(--gold2)}
+.batch-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.batch-actions select,.batch-actions input,.batch-actions button{
+  padding:6px 12px;font-size:0.7rem;font-family:var(--font-ui);
+  background:var(--bg2);border:1px solid rgba(201,169,110,0.25);
+  color:var(--cream);border-radius:2px;letter-spacing:0.04em;
+}
+.batch-actions select:focus,.batch-actions input:focus{outline:none;border-color:var(--gold)}
+.batch-actions button{
+  background:var(--gold2);color:var(--bg);font-weight:600;cursor:pointer;
+  letter-spacing:0.08em;transition:all 0.3s;
+}
+.batch-actions button:hover{background:var(--gold)}
+.batch-actions .btn-import{background:var(--green)}
+.batch-actions .btn-import:hover{background:#6aaa7a}
+.batch-actions .btn-clear{background:transparent;color:var(--red);border-color:rgba(139,58,58,0.4)}
+.batch-actions .btn-clear:hover{background:rgba(139,58,58,0.15);border-color:var(--red)}
+
+/* === PHOTO CARD GRID === */
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px}
+@media(max-width:640px){.photo-grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}}
+
+.photo-card{
+  background:linear-gradient(180deg,#f7f2e8 0%,#efe4d0 100%);
+  color:var(--ink);position:relative;border-radius:1px;
+  box-shadow:0 2px 0 rgba(0,0,0,0.1),0 6px 16px rgba(0,0,0,0.25);
+  transition:transform 0.3s var(--ease-spring),box-shadow 0.3s;
+}
+.photo-card:hover{transform:translateY(-4px);box-shadow:0 4px 0 rgba(0,0,0,0.15),0 12px 28px rgba(0,0,0,0.4)}
+.photo-card .card-preview{width:100%;aspect-ratio:4/3;overflow:hidden;position:relative;background:#1a1410}
+.photo-card .card-preview img{width:100%;height:100%;object-fit:cover}
+.photo-card .card-preview .no-preview{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  color:var(--gold2);font-size:0.65rem;letter-spacing:0.08em;
+}
+.photo-card .card-body{padding:10px 12px 12px}
+.photo-card .card-filename{font-size:0.65rem;font-weight:600;margin-bottom:6px;word-break:break-all;color:var(--ink)}
+.photo-card .card-row{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:0.62rem}
+.photo-card .card-row label{width:36px;flex-shrink:0;color:var(--ink2);font-size:0.58rem;letter-spacing:0.04em}
+.photo-card .card-row input,.photo-card .card-row select{
+  flex:1;padding:3px 6px;font-size:0.62rem;font-family:var(--font-ui);
+  border:1px solid rgba(160,128,80,0.3);border-radius:1px;
+  background:rgba(255,255,255,0.5);color:var(--ink);
+}
+.photo-card .card-row input:focus,.photo-card .card-row select:focus{outline:none;border-color:var(--gold)}
+.photo-card .card-exif{font-size:0.55rem;color:var(--gold2);margin-top:4px;line-height:1.4}
+.photo-card .card-check{position:absolute;top:8px;left:8px;z-index:5;accent-color:var(--green);width:16px;height:16px}
+
+/* === PROGRESS BAR === */
+#progress-wrap{display:none;margin-top:28px;text-align:center}
+#progress-wrap.active{display:block}
+.progress-bar-bg{height:4px;background:rgba(201,169,110,0.12);border-radius:2px;overflow:hidden;margin-bottom:8px}
+.progress-bar-fg{height:100%;background:linear-gradient(to right,var(--gold2),var(--gold),var(--green));transition:width 0.3s;width:0%;border-radius:2px}
+#progress-text{font-size:0.7rem;color:var(--gold2);letter-spacing:0.06em}
+
+/* === LOG === */
+#log-wrap{margin-top:16px;max-height:200px;overflow-y:auto;display:none}
+#log-wrap.active{display:block}
+#log{
+  font-family:'Consolas','Courier New',monospace;font-size:0.6rem;
+  color:rgba(245,240,232,0.5);line-height:1.8;white-space:pre-wrap;
+  padding:12px;background:rgba(0,0,0,0.3);border-radius:2px;
+  border:1px solid rgba(201,169,110,0.1);
+}
+
+/* === EMPTY STATE === */
+.empty-state{text-align:center;padding:60px 20px}
+.empty-state .empty-icon{font-size:3rem;margin-bottom:12px;display:block;opacity:0.4}
+.empty-state p{font-size:0.75rem;color:var(--gold2);letter-spacing:0.06em}
+
+/* === TOAST === */
+#toast{
+  position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:10000;
+  padding:10px 24px;border-radius:2px;font-size:0.75rem;letter-spacing:0.06em;
+  opacity:0;transition:opacity 0.4s;pointer-events:none;
+}
+#toast.show{opacity:1}
+#toast.success{background:#2a4a2a;color:#8cc88c;border:1px solid rgba(100,200,100,0.3)}
+#toast.error{background:#4a2a2a;color:#c88c8c;border:1px solid rgba(200,100,100,0.3)}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     LOGIN OVERLAY
+     ============================================================ -->
+<div id="login-overlay">
+  <div class="login-box">
+    <span class="login-icon">🔐</span>
+    <h2>图库管理</h2>
+    <p>请输入密码以继续</p>
+    <input type="password" id="login-password" placeholder="密码" autocomplete="off">
+    <button id="login-btn">进入</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SERVER STATUS BANNER
+     ============================================================ -->
+<div id="server-banner">
+  <span class="banner-icon">⚠️</span>
+  <span>本地服务器未连接 — 请运行 <code>node add-photos.js</code> 以启用照片导入功能</span>
+</div>
+
+<!-- ============================================================
+     MAIN CONTENT
+     ============================================================ -->
+<header>
+  <div>
+    <h1>📷 添加照片</h1>
+    <div class="sub">IMAGE IMPORT · GALLERY MANAGEMENT</div>
+  </div>
+  <div class="nav-links">
+    <a href="index.html" target="_blank">查看照片墙 →</a>
+  </div>
+</header>
+
+<main>
+  <!-- Drop Zone -->
+  <div id="drop-zone">
+    <span class="dz-icon">🎞️</span>
+    <div class="dz-title">拖放照片到此处</div>
+    <div class="dz-hint">或点击选择文件 · 支持 JPG / PNG / WebP · 可批量导入</div>
+    <input type="file" id="file-input" multiple accept="image/jpeg,image/png,image/webp">
+  </div>
+
+  <!-- Photo List -->
+  <div id="photo-list" style="display:none">
+    <div class="photo-list-header">
+      <h2>待导入照片 <span class="count" id="photo-count"></span></h2>
+      <div class="batch-actions">
+        <label style="font-size:0.65rem;color:var(--gold2)">统一设置位置：</label>
+        <select id="batch-location">
+          <option value="">— 选择城市 —</option>
+        </select>
+        <input type="text" id="batch-subloc" placeholder="子位置（可选）" style="width:100px">
+        <button id="btn-apply-all">应用到全部</button>
+        <button class="btn-import" id="btn-import">导入图库</button>
+        <button class="btn-clear" id="btn-clear">清空</button>
+      </div>
+    </div>
+    <div class="photo-grid" id="photo-grid"></div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" id="empty-state">
+    <span class="empty-icon">📂</span>
+    <p>尚未添加照片 — 请将照片拖放到上方区域</p>
+  </div>
+
+  <!-- Progress -->
+  <div id="progress-wrap">
+    <div class="progress-bar-bg"><div class="progress-bar-fg" id="progress-bar"></div></div>
+    <div id="progress-text">准备中…</div>
+  </div>
+
+  <!-- Log -->
+  <div id="log-wrap"><div id="log"></div></div>
+</main>
+
+<div id="toast"></div>
+
+<script>
+// ============================================================
+// AUTH — Password Protection
+// ============================================================
+// To change password: replace hash below with SHA-256 of new password
+// Generate: https://emn178.github.io/online-tools/sha256.html
+const PASSWORD_HASH = 'e4339e761261c995b73b91d0d00cc8137d80a226c730fc72e19a35547a4b91f3';
+
+let serverAvailable = false;
+
+function checkAuth() {
+  return sessionStorage.getItem('admin_auth') === '1';
+}
+
+async function verifyPassword(input) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(input);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return hashHex === PASSWORD_HASH;
+}
+
+function showLoginError(msg) {
+  document.getElementById('login-err').textContent = msg;
+}
+
+function hideLogin() {
+  document.getElementById('login-overlay').classList.add('hidden');
+}
+
+// ============================================================
+// SERVER CHECK
+// ============================================================
+async function checkServer() {
+  try {
+    const res = await fetch('/api/locations', { method: 'GET', signal: AbortSignal.timeout(2000) });
+    if (res.ok) {
+      serverAvailable = true;
+      document.getElementById('server-banner').classList.remove('show');
+      return true;
+    }
+  } catch(e) { /* server not available */ }
+  serverAvailable = false;
+  document.getElementById('server-banner').classList.add('show');
+  document.getElementById('drop-zone').classList.add('disabled');
+  document.getElementById('drop-zone').querySelector('.dz-hint').textContent = '服务器未连接 — 请本地运行 node add-photos.js';
+  return false;
+}
+
+// ============================================================
+// STATE
+// ============================================================
+let stagedPhotos = [];
+let existingLocations = [];
+
+// ============================================================
+// INIT
+// ============================================================
+async function init() {
+  if (!checkAuth()) {
+    setupLogin();
+    return;
+  }
+  hideLogin();
+  await checkServer();
+  if (serverAvailable) {
+    try {
+      const res = await fetch('/api/locations');
+      existingLocations = await res.json();
+      populateLocationSelects();
+    } catch(e) { console.warn('Failed to load locations:', e); }
+  }
+  setupDropZone();
+  setupButtons();
+}
+
+function setupLogin() {
+  const overlay = document.getElementById('login-overlay');
+  const input = document.getElementById('login-password');
+  const btn = document.getElementById('login-btn');
+
+  async function tryLogin() {
+    const pw = input.value;
+    if (!pw) { showLoginError('请输入密码'); return; }
+    const ok = await verifyPassword(pw);
+    if (ok) {
+      sessionStorage.setItem('admin_auth', '1');
+      hideLogin();
+      init();
+    } else {
+      showLoginError('密码错误，请重试');
+      input.value = '';
+      input.focus();
+    }
+  }
+
+  btn.addEventListener('click', tryLogin);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); });
+  input.focus();
+}
+
+function populateLocationSelects() {
+  const selects = [document.getElementById('batch-location')];
+  selects.forEach(sel => {
+    existingLocations.forEach(loc => {
+      const opt = document.createElement('option'); opt.value = loc; opt.textContent = loc;
+      sel.appendChild(opt);
+    });
+  });
+}
+
+// ============================================================
+// DROP ZONE
+// ============================================================
+function setupDropZone() {
+  const dz = document.getElementById('drop-zone');
+  const input = document.getElementById('file-input');
+
+  if (!serverAvailable) return;
+
+  input.addEventListener('change', () => handleFiles(input.files));
+
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('drag-over');
+    handleFiles(e.dataTransfer.files);
+  });
+}
+
+async function handleFiles(fileList) {
+  if (!serverAvailable) { toast('本地服务器未连接', 'error'); return; }
+
+  const validFiles = [...fileList].filter(f => /\.(jpg|jpeg|png|webp)$/i.test(f.name));
+  if (!validFiles.length) { toast('请选择 JPG/PNG/WebP 格式的图片', 'error'); return; }
+
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('photo-list').style.display = 'block';
+
+  for (const file of validFiles) {
+    if (stagedPhotos.find(p => p.filename === file.name)) continue;
+    const photo = { id: Date.now() + Math.random(), file, filename: file.name, dateTaken: '', make: '', model: '', location: '', subLocation: '' };
+    stagedPhotos.push(photo);
+    renderCard(photo);
+  }
+
+  updateCount();
+  extractExif(validFiles);
+}
+
+async function extractExif(files) {
+  const formData = new FormData();
+  files.forEach(f => formData.append('files', f));
+  try {
+    const res = await fetch('/api/scan', { method: 'POST', body: formData });
+    const results = await res.json();
+    for (const r of results) {
+      const photo = stagedPhotos.find(p => p.filename === r.filename);
+      if (photo) {
+        photo.dateTaken = r.dateTaken || '';
+        photo.make = r.make || '';
+        photo.model = r.model || '';
+        updateCardData(photo);
+      }
+    }
+  } catch(e) { console.error('EXIF scan failed:', e); }
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function renderCard(photo) {
+  const grid = document.getElementById('photo-grid');
+  const card = document.createElement('div');
+  card.className = 'photo-card'; card.dataset.photoId = photo.id;
+  card.innerHTML = `
+    <input type="checkbox" class="card-check" checked>
+    <div class="card-preview">
+      ${photo.file ? `<img src="${URL.createObjectURL(photo.file)}" alt="${photo.filename}">` : '<div class="no-preview">📷</div>'}
+    </div>
+    <div class="card-body">
+      <div class="card-filename" title="${photo.filename}">${photo.filename}</div>
+      <div class="card-row"><label>日期</label><input type="text" class="field-date" value="${photo.dateTaken}" placeholder="YYYY-MM-DD"></div>
+      <div class="card-row"><label>位置</label>
+        <select class="field-loc"><option value="">— 选择 —</option>${existingLocations.map(l=>`<option value="${l}">${l}</option>`).join('')}<option value="__other__">其他…</option></select>
+      </div>
+      <div class="card-row"><label>子位</label><input type="text" class="field-sub" value="${photo.subLocation}" placeholder="可选"></div>
+      <div class="card-exif" id="exif-${photo.id}">${photo.make ? photo.make + ' ' + photo.model : '读取 EXIF 中…'}</div>
+    </div>`;
+  grid.appendChild(card);
+}
+
+function updateCardData(photo) {
+  const card = document.querySelector(`[data-photo-id="${photo.id}"]`);
+  if (!card) return;
+  const dateField = card.querySelector('.field-date');
+  if (dateField && photo.dateTaken && !dateField.value) dateField.value = photo.dateTaken;
+  const exifEl = document.getElementById('exif-' + photo.id);
+  if (exifEl && photo.make) exifEl.textContent = [photo.make, photo.model].filter(Boolean).join(' ') + (photo.dateTaken ? ' · ' + photo.dateTaken : '');
+}
+
+function updateCount() {
+  document.getElementById('photo-count').textContent = `(${stagedPhotos.length} 张)`;
+}
+
+// ============================================================
+// BUTTONS
+// ============================================================
+function setupButtons() {
+  document.getElementById('btn-apply-all').addEventListener('click', () => {
+    const loc = document.getElementById('batch-location').value;
+    const sub = document.getElementById('batch-subloc').value.trim();
+    if (!loc) { toast('请先选择位置', 'error'); return; }
+    document.querySelectorAll('.photo-card').forEach(card => {
+      card.querySelector('.field-loc').value = loc;
+      if (sub) card.querySelector('.field-sub').value = sub;
+    });
+    toast(`已应用位置: ${loc}${sub ? ' · ' + sub : ''}`, 'success');
+  });
+
+  document.getElementById('btn-clear').addEventListener('click', () => {
+    stagedPhotos = [];
+    document.getElementById('photo-grid').innerHTML = '';
+    document.getElementById('photo-list').style.display = 'none';
+    document.getElementById('empty-state').style.display = 'block';
+    updateCount();
+  });
+
+  document.getElementById('btn-import').addEventListener('click', doImport);
+
+  document.getElementById('photo-grid').addEventListener('change', e => {
+    if (e.target.classList.contains('field-loc') && e.target.value === '__other__') {
+      const custom = prompt('输入城市名称：');
+      if (custom && custom.trim()) {
+        const opt = document.createElement('option');
+        opt.value = custom.trim(); opt.textContent = custom.trim(); opt.selected = true;
+        e.target.insertBefore(opt, e.target.lastChild);
+        if (!existingLocations.includes(custom.trim())) {
+          existingLocations.push(custom.trim());
+          populateLocationSelects();
+        }
+      } else { e.target.value = ''; }
+    }
+  });
+}
+
+// ============================================================
+// IMPORT
+// ============================================================
+async function doImport() {
+  if (!serverAvailable) { toast('本地服务器未连接，无法导入', 'error'); return; }
+
+  const items = [];
+  const cards = document.querySelectorAll('.photo-card');
+  cards.forEach(card => {
+    const id = card.dataset.photoId;
+    const photo = stagedPhotos.find(p => p.id == id);
+    if (!photo) return;
+    const checked = card.querySelector('.card-check').checked;
+    if (!checked) return;
+    const dateVal = card.querySelector('.field-date').value.trim();
+    const locVal = card.querySelector('.field-loc').value;
+    const subVal = card.querySelector('.field-sub').value.trim();
+    items.push({ filename: photo.filename, dateTaken: dateVal, location: locVal, subLocation: subVal });
+  });
+
+  if (!items.length) { toast('没有选中任何照片', 'error'); return; }
+
+  const missingDate = items.filter(i => !i.dateTaken);
+  const missingLoc = items.filter(i => !i.location);
+  if (missingDate.length || missingLoc.length) {
+    let msg = [];
+    if (missingDate.length) msg.push(`${missingDate.length} 张缺少日期`);
+    if (missingLoc.length) msg.push(`${missingLoc.length} 张缺少位置`);
+    toast('请补全所有信息：' + msg.join('、'), 'error');
+    return;
+  }
+
+  document.getElementById('btn-import').disabled = true;
+  const progWrap = document.getElementById('progress-wrap');
+  const logWrap = document.getElementById('log-wrap');
+  const logEl = document.getElementById('log');
+  progWrap.classList.add('active'); logWrap.classList.add('active'); logEl.textContent = '';
+
+  try {
+    const formData = new FormData();
+    for (const item of items) {
+      const photo = stagedPhotos.find(p => p.filename === item.filename);
+      if (photo && photo.file) {
+        formData.append('files', photo.file);
+        formData.append('meta_' + photo.filename, JSON.stringify(item));
+      }
+    }
+
+    log('⏳ 正在上传并导入…');
+    const res = await fetch('/api/import', { method: 'POST', body: formData });
+    const result = await res.json();
+
+    if (result.error) { toast(result.error, 'error'); log('❌ ' + result.error); return; }
+
+    log(result.log || '');
+    updateProgress(0.5, '导入完成，正在重新构建…');
+
+    const pollId = setInterval(async () => {
+      try {
+        const sr = await fetch('/api/build-status');
+        const status = await sr.json();
+        if (status.log) log(status.log);
+        if (status.progress !== undefined) updateProgress(0.5 + status.progress * 0.5, status.phase || '构建中…');
+        if (status.done) {
+          clearInterval(pollId);
+          updateProgress(1, '✅ 完成！');
+          toast(`成功导入 ${result.imported || items.length} 张照片`, 'success');
+          log('✅ 导入完成 — 刷新照片墙即可查看新图片');
+          document.getElementById('btn-import').disabled = false;
+        }
+      } catch(e) { /* poll continues */ }
+    }, 800);
+  } catch(e) {
+    toast('导入失败: ' + e.message, 'error');
+    log('❌ 导入失败: ' + e.message);
+    document.getElementById('btn-import').disabled = false;
+  }
+}
+
+function updateProgress(pct, text) {
+  document.getElementById('progress-bar').style.width = Math.round(pct * 100) + '%';
+  document.getElementById('progress-text').textContent = text;
+}
+
+function log(msg) {
+  const el = document.getElementById('log');
+  if (el) el.textContent += msg + '\n';
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function toast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = type + ' show';
+  clearTimeout(t._timeout);
+  t._timeout = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
